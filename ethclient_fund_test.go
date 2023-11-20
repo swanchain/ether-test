@@ -3,12 +3,12 @@ package main // Use the appropriate package name
 import (
 	"context"
 	"crypto/ecdsa"
+	"ether-test/contract"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/flyworker/ether-test/contract"
 	"github.com/joho/godotenv"
 	"math/big"
 	"os"
