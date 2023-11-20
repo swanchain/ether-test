@@ -14,7 +14,7 @@ This project contains a suite of tests written in Go for interacting with Ethere
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/flyworker/ether-test
+   git clone https://github.com/filswan/ether-test
    ```
 2. Navigate to the project directory:
    ```bash
