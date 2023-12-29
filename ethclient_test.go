@@ -2,14 +2,17 @@ package main // Use the appropriate package name
 
 import (
 	"context"
-	"github.com/ethereum/go-ethereum/common"
 	"math"
 	"math/big"
 	"testing"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common"
+
 	"github.com/ethereum/go-ethereum/ethclient"
 )
+
+const rpcURL = "https://rpc-testnet.swanchain.io"
 
 // TestConnectToTestnet tests the ability to connect to the testnet
 func TestConnectToTestnet(t *testing.T) {
@@ -17,6 +20,7 @@ func TestConnectToTestnet(t *testing.T) {
 	defer cancel()
 
 	// Assuming rpcURL is defined as a constant or variable that contains your Ethereum testnet RPC URL
+
 	client, err := ethclient.DialContext(ctx, rpcURL)
 	if err != nil {
 		t.Fatalf("Failed to connect to the testnet: %v", err)
