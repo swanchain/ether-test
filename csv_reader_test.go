@@ -2,19 +2,30 @@ package main
 
 import (
 	"bufio"
-	"fmt"
+	"context"
+	"crypto/ecdsa"
+	"math/big"
 	"os"
+	"strings"
 	"testing"
+	"time"
+
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/joho/godotenv"
 )
 
-// ReadAndPrintCSV reads a CSV file, skips the header, and prints the records.
-func ReadAndPrintCSV(filePath string) error {
+// ReadAddressesFromCSV reads Ethereum addresses from a CSV file.
+func ReadAddressesFromCSV(filePath string) ([]string, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer file.Close()
 
+	var addresses []string
 	scanner := bufio.NewScanner(file)
 	isHeader := true
 
@@ -24,52 +35,84 @@ func ReadAndPrintCSV(filePath string) error {
 			isHeader = false
 			continue
 		}
-		// fmt.Println(scanner.Text()) // Print each record
-	}
 
-	return scanner.Err()
-}
-
-func ReadCSVAndPrintCount(filePath string) (int, error) {
-	file, err := os.Open(filePath)
-	if err != nil {
-		return 0, err
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	recordCount := 0
-	isHeader := true
-
-	for scanner.Scan() {
-		if isHeader {
-			// Skip the header
-			isHeader = false
-			continue
+		line := scanner.Text()
+		fields := strings.Split(line, ";")
+		if len(fields) > 0 {
+			addresses = append(addresses, fields[0])
 		}
-		recordCount++
 	}
 
-	if err := scanner.Err(); err != nil {
-		return 0, err
-	}
-
-	fmt.Printf("Total records (excluding header): %d\n", recordCount)
-	return recordCount, nil
+	return addresses, scanner.Err()
 }
-
-func TestReadAndPrintCSV(t *testing.T) {
-
-	// Call the ReadAndPrintCSV function
-	recordCount, err := ReadCSVAndPrintCount("./../../../ethereum-address/000000000000.csv")
+func TestSendEthToAddresses(t *testing.T) {
+	err := godotenv.Load()
 	if err != nil {
-		t.Errorf("Failed to read CSV file and print count: %v", err)
+		t.Fatalf("Error loading .env file: %v", err)
 	}
 
-	// Assert the record count (change the expected count based on your actual test data)
-	expectedCount := 4515349 // Set this to the actual number of records in your test data
-	if recordCount != expectedCount {
-		t.Errorf("Expected %d records, got %d", expectedCount, recordCount)
+	senderPrivateKey := os.Getenv("SENDER_PRIVATE_KEY")
+	rpcURL := os.Getenv("RPC_URL") // Make sure this is set in your .env file
+	if senderPrivateKey == "" {
+		t.Fatal("No private key found in .env file")
 	}
 
+	client, err := ethclient.Dial(rpcURL)
+	if err != nil {
+		t.Fatalf("Failed to connect to the Ethereum client: %v", err)
+	}
+	defer client.Close()
+
+	privateKey, err := crypto.HexToECDSA(senderPrivateKey)
+	if err != nil {
+		t.Fatalf("Failed to parse private key: %v", err)
+	}
+
+	publicKey := privateKey.Public()
+	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
+	if !ok {
+		t.Fatal("Cannot assert type: publicKey is not of type *ecdsa.PublicKey")
+	}
+
+	fromAddress := crypto.PubkeyToAddress(*publicKeyECDSA)
+	nonce, err := client.PendingNonceAt(context.Background(), fromAddress)
+	if err != nil {
+		t.Fatalf("Failed to get nonce: %v", err)
+	}
+
+	gasLimit := uint64(21000) // Standard limit for a transfer
+	gasPrice, err := client.SuggestGasPrice(context.Background())
+	if err != nil {
+		t.Fatalf("Failed to suggest gas price: %v", err)
+	}
+
+	amount := big.NewInt(1e12) // 0.000001 ETH in Wei
+
+	addresses, err := ReadAddressesFromCSV("./../../../ethereum-address/000000000003.csv")
+	if err != nil {
+		t.Fatalf("Failed to read addresses from CSV: %v", err)
+	}
+
+	for _, recipientAddress := range addresses {
+		tx := types.NewTransaction(nonce, common.HexToAddress(recipientAddress), amount, gasLimit, gasPrice, nil)
+
+		chainID, err := client.NetworkID(context.Background())
+		if err != nil {
+			t.Fatalf("Failed to get network ID: %v", err)
+		}
+
+		signedTx, err := types.SignTx(tx, types.NewEIP155Signer(chainID), privateKey)
+		if err != nil {
+			t.Fatalf("Failed to sign transaction: %v", err)
+		}
+
+		err = client.SendTransaction(context.Background(), signedTx)
+		if err != nil {
+			t.Fatalf("Failed to send transaction to %s: %v", recipientAddress, err)
+		}
+
+		t.Logf("Transaction sent to %s: %s", recipientAddress, signedTx.Hash().Hex())
+		nonce++ // Increment nonce for next transaction
+		time.Sleep(2 * time.Second)
+	}
 }
