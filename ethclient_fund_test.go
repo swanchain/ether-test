@@ -117,7 +117,7 @@ func TestWriteMessageToContract(t *testing.T) {
 		t.Fatalf("Failed to create authorized transactor: %v", err)
 	}
 
-	contractAddress := common.HexToAddress("0xBEE4684EA19D09ae89038B09381c548e3202AaaA")
+	contractAddress := common.HexToAddress("0x0e32ed3f4696da578f8f3d32177a72a05188f903")
 	msgContract, err := contract.NewContract(contractAddress, client)
 	if err != nil {
 		t.Fatalf("Failed to instantiate the contract: %v", err)
@@ -143,7 +143,7 @@ func TestReadMessageFromContract(t *testing.T) {
 	}
 	defer client.Close()
 
-	contractAddress := common.HexToAddress("0xBEE4684EA19D09ae89038B09381c548e3202AaaA")
+	contractAddress := common.HexToAddress("0x0e32ed3f4696da578f8f3d32177a72a05188f903")
 	msgContract, err := contract.NewContract(contractAddress, client)
 	if err != nil {
 		t.Fatalf("Failed to instantiate the contract: %v", err)
