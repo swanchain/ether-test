@@ -52,7 +52,6 @@ func TestSendEthToAddresses(t *testing.T) {
 	}
 
 	senderPrivateKey := os.Getenv("SENDER_PRIVATE_KEY")
-	rpcURL := os.Getenv("RPC_URL") // Make sure this is set in your .env file
 	if senderPrivateKey == "" {
 		t.Fatal("No private key found in .env file")
 	}
@@ -88,7 +87,7 @@ func TestSendEthToAddresses(t *testing.T) {
 
 	amount := big.NewInt(1e12) // 0.000001 ETH in Wei
 
-	addresses, err := ReadAddressesFromCSV("./../../../ethereum-address/000000000003.csv")
+	addresses, err := ReadAddressesFromCSV("./ethereum-address/000000000003.csv")
 	if err != nil {
 		t.Fatalf("Failed to read addresses from CSV: %v", err)
 	}

@@ -12,8 +12,6 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
-const rpcURL = "https://rpc-testnet.swanchain.io"
-
 // TestConnectToTestnet tests the ability to connect to the testnet
 func TestConnectToTestnet(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
