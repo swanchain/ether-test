@@ -79,7 +79,21 @@ func TestTransferEth(t *testing.T) {
 		t.Fatalf("Failed to send transaction: %v", err)
 	}
 
-	t.Logf("Transaction sent: %s", signedTx.Hash().Hex())
+	t.Logf("Transaction sent: https://saturn-explorer.swanchain.io/tx/%s", signedTx.Hash().Hex())
+	// After sending the transaction, wait for it to be mined
+	ctx := context.Background()
+	receipt, err := bind.WaitMined(ctx, client, signedTx)
+	if err != nil {
+		t.Fatalf("Failed to wait for transaction to be mined: %v", err)
+	}
+
+	// Check the status of the transaction
+	if receipt.Status != 1 {
+		t.Fatalf("Transaction failed: receipt status is 0")
+	}
+
+	t.Logf("Transaction successfully mined, block number: %v", receipt.BlockNumber)
+
 }
 
 func TestWriteMessageToContract(t *testing.T) {
