@@ -136,8 +136,18 @@ func TestWriteMessageToContract(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to instantiate the contract: %v", err)
 	}
+	// Get the current time
+	currentTime := time.Now()
 
-	tx, err := msgContract.WriteMessage(auth, "Hello, Swan Chain!")
+	// Format the current time as a string. You can adjust the layout to match your needs.
+	// The reference time used in the examples is Mon Jan 2 15:04:05 MST 2006 (this specific date is used to define the format).
+	formattedTime := currentTime.Format("2006-01-02 15:04:05")
+
+	// Concatenate the message with the formatted time
+	message := "Hello, ether test update content at " + formattedTime
+
+	// Use the message in your contract call
+	tx, err := msgContract.WriteMessage(auth, message)
 	if err != nil {
 		t.Fatalf("Failed to send transaction: %v", err)
 	}

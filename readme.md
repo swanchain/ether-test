@@ -39,7 +39,7 @@ SENDER_PRIVATE_KEY=your_private_key
 
 - `ethclient_fund_test.go`: Contains tests for transferring Ether to an Ethereum address. It demonstrates how to construct, sign, and send transactions.
 
-- `config_test.go`: (Provide a brief description of what this file does).
+- `csv_reader_test.go`: Contains tests for transferring Ether to multiple Ethereum addresses from a CSV file.
 
 ## Running Tests
 
