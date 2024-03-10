@@ -3,12 +3,14 @@ package main // Use the appropriate package name
 import (
 	"context"
 	"crypto/ecdsa"
+	"ether-test/contract"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/flyworker/ether-test/contract"
+	"github.com/flyworker/ether-test/contract/tokenERC"
+
 	"github.com/joho/godotenv"
 	"math/big"
 	"os"
@@ -180,4 +182,68 @@ func TestReadMessageFromContract(t *testing.T) {
 	}
 
 	t.Logf("Read message: %s", message)
+}
+
+func TestTransferMyToken(t *testing.T) {
+	err := godotenv.Load()
+	if err != nil {
+		t.Fatalf("Error loading .env file: %v", err)
+	}
+
+	MytokenContractAddress := "0xECd034b41CDF258a49634d61304635EEF1F45b74"
+	contractAddress := common.HexToAddress(MytokenContractAddress)
+	recipientAddress := common.HexToAddress("0x96216849c49358B10257cb55b28eA603c874b05E") // Replace with recipient's address
+	transferAmount := big.NewInt(1000000000000000000)                                     // transfer 1 token
+
+	client, err := ethclient.Dial(rpcURL)
+	if err != nil {
+		t.Fatalf("Failed to connect to the Ethereum client: %v", err)
+	}
+	defer client.Close()
+
+	senderPrivateKey := os.Getenv("SENDER_PRIVATE_KEY")
+	if senderPrivateKey == "" {
+		t.Fatal("No private key found in .env file")
+	}
+
+	privateKey, err := crypto.HexToECDSA(senderPrivateKey)
+	if err != nil {
+		t.Fatalf("Failed to parse private key: %v", err)
+	}
+	// Fetching the network ID
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	networkID, err := client.NetworkID(ctx)
+	if err != nil {
+		t.Fatalf("Failed to get network ID: %v", err)
+	}
+	auth, err := bind.NewKeyedTransactorWithChainID(privateKey, networkID) // Use the correct chain ID
+	if err != nil {
+		t.Fatalf("Failed to create authorized transactor: %v", err)
+	}
+
+	token, err := tokenERC.NewMyToken(contractAddress, client)
+	if err != nil {
+		t.Fatalf("Failed to instantiate a MyToken contract: %v", err)
+	}
+
+	tx, err := token.Transfer(auth, recipientAddress, transferAmount)
+	if err != nil {
+		t.Fatalf("Failed to send transaction: %v", err)
+	}
+
+	t.Logf("Transfer transaction sent: %s", tx.Hash().Hex())
+
+	// After sending the transaction, wait for it to be mined
+	receipt, err := bind.WaitMined(ctx, client, tx)
+	if err != nil {
+		t.Fatalf("Failed to wait for transaction to be mined: %v", err)
+	}
+
+	// Check the status of the transaction
+	if receipt.Status != 1 {
+		t.Fatalf("Transaction failed: receipt status is 0")
+	}
+
+	t.Logf("Transfer successfully mined, block number: %v", receipt.BlockNumber)
 }
